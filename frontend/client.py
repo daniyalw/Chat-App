@@ -3,6 +3,7 @@ from threading import Thread
 import ui
 from darkdetect import isDark
 from tkinter import *
+from tkinter.messagebox import *
 from tkinter.ttk import *
 
 class Client:
@@ -124,7 +125,10 @@ class Client:
         self.root.destroy()
 
     def start(self):
-        self.client_socket.connect(self.addr)
+        try:
+            self.client_socket.connect(self.addr)
+        except:
+            showerror("Error", "Unable to connect to server.")
 
         receive_thread = Thread(target=self.receive)
         receive_thread.start()
