@@ -106,7 +106,7 @@ class ChatUI(Frame):
         self.back_b.grid(row=0, column=0, sticky='nsew', pady=15)
 
         self.new_b = Button(self, text="New", command=self.new)
-        self.new_b.grid(row=1, column=0)
+        self.new_b.grid(row=1, column=0, sticky='nsew', pady=15)
 
         self.tree = Treeview(self)
         self.tree.heading("#0", text="Messages")
