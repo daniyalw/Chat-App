@@ -129,6 +129,7 @@ class ChatUI(Frame):
 
     def new(self):
         name = askstring("New", "Enter name: ")
+        self.content_entry.config(state='normal')
         self._new(name)
 
     def send(self):

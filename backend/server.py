@@ -63,10 +63,9 @@ class Server:
                     self.messages.set(messages)
 
             if msg.startswith("to"):
-                to = msg.split(':')[1]
-                _from = self.clients[client]['username']
-                message = msg.split(':')[2]
-                sent = False
+                to = msg.split(':')[1].strip()
+                _from = self.clients[client]['username'].strip()
+                message = msg.split(':')[2].strip()
 
                 clients = self.clients
 

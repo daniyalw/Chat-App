@@ -101,7 +101,10 @@ class Client:
             if msg.startswith("new"):
                 result = msg.split(':')[2]
                 name = msg.split(':')[1]
-                result = True if result == "True" else False
+                if result == "True":
+                    result = True
+                else:
+                    result = False
                 if result:
                     self.chat_ui._insert(name)
 
