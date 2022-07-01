@@ -52,6 +52,10 @@ class LoginUI(Frame):
     def message_config(self, message):
         self.message.config(text=message)
 
+    def delete_all_from_entry(self):
+        self.uentry.delete(0, END)
+        self.pentry.delete(0, END)
+
 class SignupUI(Frame):
     def __init__(self, root, signup, back):
         self.root = root
@@ -82,6 +86,79 @@ class SignupUI(Frame):
 
     def message_config(self, message):
         self.message.config(text=message)
+
+    def delete_all_from_entry(self):
+        self.uentry.delete(0, END)
+        self.pentry.delete(0, END)
+
+class JoinServerUI(Frame):
+    def __init__(self, root, join_chatroom):
+        self.root = root
+        Frame.__init__(self, root)
+
+        # for joining a server
+        self.jntext = Label(self, text="Join server name: ")
+        self.jname = Entry(self)
+
+        self.jptext = Label(self, text="Join server pswd: ")
+        self.jpswd = Entry(self)
+
+        self.jerr = Label(self)
+        self.jbtn = Button(self, text="Submit", command=join_chatroom)
+
+        self.jntext.grid(row=0, column=0, padx=10, pady=10)
+        self.jname.grid(row=0, column=1, padx=10, pady=10)
+        self.jptext.grid(row=1, column=0, padx=10, pady=10)
+        self.jpswd.grid(row=1, column=1, padx=10, pady=10)
+        self.jerr.grid(row=2, column=0, padx=10, pady=10)
+        self.jbtn.grid(row=2, column=1, padx=10, pady=10)
+
+    def get(self):
+        return self.jname.get(), self.jpswd.get()
+
+    def delete_all_from_entry(self):
+        self.jname.delete(0, END)
+        self.jpswd.delete(0, END)
+
+class CreateServerUI(Frame):
+    def __init__(self, root, create_room):
+        self.root = root
+        Frame.__init__(self, root)
+
+        # for creating a server
+        self.cntext = Label(self, text="Create server name: ")
+        self.cname = Entry(self)
+
+        self.cptext = Label(self, text="Create server pswd: ")
+        self.cpswd = Entry(self)
+
+        self.cerr = Label(self)
+        self.cbtn = Button(self, text="Submit", command=create_room)
+
+        self.cntext.grid(row=0, column=0, padx=10, pady=10)
+        self.cname.grid(row=0, column=1, padx=10, pady=10)
+        self.cptext.grid(row=1, column=0, padx=10, pady=10)
+        self.cpswd.grid(row=1, column=1, padx=10, pady=10)
+        self.cerr.grid(row=2, column=0, padx=10, pady=10)
+        self.cbtn.grid(row=2, column=1, padx=10, pady=10)
+
+    def get(self):
+        return self.cname.get(), self.cpswd.get()
+
+    def delete_all_from_entry(self):
+        self.cname.delete(0, END)
+        self.cpswd.delete(0, END)
+
+class SelectChoiceRoom(Frame):
+    def __init__(self, root, create_ui, join_ui):
+        self.root = root
+        Frame.__init__(self, root)
+
+        self.cbtn = Button(self, text="Create", command=create_ui)
+        self.jbtn = Button(self, text="Join", command=join_ui)
+
+        self.cbtn.grid(row=0, column=0, padx=10, pady=10)
+        self.jbtn.grid(row=1, column=0, padx=10, pady=10)
 
 class ChatUI(Frame):
     def __init__(self, root, _send, logout, name):
@@ -131,6 +208,13 @@ class ChatUI(Frame):
     def change_my_name(self, new_name):
         self.name = new_name
 
+    def delete_all_from_entry(self):
+        self.text.config(state='normal')
+        self.text.delete('1.0', END)
+        self.text.config(state='disabled')
+
+        self.content_entry.delete('1.0', END)
+
 class LoadingUI(Frame):
     def __init__(self, root):
         self.root = root
@@ -155,6 +239,9 @@ class Client:
         self.first_ui = BeginningUI(self.root, self.from_first_to_login, self.from_first_to_signup)
         self.login_ui = LoginUI(self.root, self.login, self.from_login_to_first)
         self.signup_ui = SignupUI(self.root, self.signup, self.from_signup_to_first)
+        self.select_ui = SelectChoiceRoom(self.root, self.from_select_to_create, self.from_select_to_join)
+        self.join_ui = JoinServerUI(self.root, self.join_room)
+        self.create_ui = CreateServerUI(self.root, self.create_room)
         self.chat_ui = ChatUI(self.root, self.send, self.logout, self.name)
         self.loading_ui = LoadingUI(self.root)
 
@@ -185,6 +272,12 @@ class Client:
     def from_loading_to_chat(self):
         self.switch(self.loading_ui, self.chat_ui)
 
+    def from_select_to_create(self):
+        self.switch(self.select_ui, self.create_ui)
+
+    def from_select_to_join(self):
+        self.switch(self.select_ui, self.join_ui)
+
     def send_msg(self, msg):
         msg = msg.encode("utf-8")
         self.client_socket.send(msg)
@@ -204,6 +297,16 @@ class Client:
     def send(self, fmt):
         self.send_msg(fmt)
 
+    def join_room(self):
+        name, pswd = self.join_ui.get()
+        self.switch(self.join_ui, self.loading_ui)
+        self.send(f"room:join:{name}:{pswd}")
+
+    def create_room(self):
+        name, pswd = self.create_ui.get()
+        self.switch(self.create_ui, self.loading_ui)
+        self.send(f"room:create:{name}:{pswd}")
+
     def handler(self):
         while True:
             try:
@@ -216,7 +319,7 @@ class Client:
 
                 if result.startswith("True"):
                     self.chat_ui.change_my_name(self.name)
-                    self.switch(self.loading_ui, self.chat_ui)
+                    self.switch(self.loading_ui, self.select_ui)
                 else:
                     self.name = ""
                     self.switch(self.loading_ui, self.login_ui)
@@ -226,7 +329,7 @@ class Client:
 
                 if result == "True":
                     self.chat_ui.change_my_name(self.name)
-                    self.switch(self.loading_ui, self.chat_ui)
+                    self.switch(self.loading_ui, self.select_ui)
                 else:
                     self.name = ""
                     self.switch(self.loading_ui, self.signup_ui)
@@ -236,6 +339,19 @@ class Client:
                 _msg = msg.split(":")[2]
 
                 self.chat_ui.display_new_msg(_msg, _from)
+            elif msg.startswith("room:"):
+                succ = msg.split(":")[1]
+                action = msg.split(":")[2]
+
+                if succ == "success":
+                    self.switch(self.loading_ui, self.chat_ui)
+                else:
+                    if action == "create":
+                        self.create_ui.cerr.config(text=succ)
+                        self.switch(self.loading_ui, self.create_ui)
+                    else:
+                        self.join_ui.jerr.config(text=succ)
+                        self.switch(self.loading_ui, self.join_ui)
 
     def on_closing(self):
         self.send_msg("end")
@@ -246,6 +362,13 @@ class Client:
         self.name = ""
         self.chat_ui.change_my_name("")
         self.switch(self.chat_ui, self.first_ui)
+
+        self.login_ui.delete_all_from_entry()
+        self.signup_ui.delete_all_from_entry()
+        self.join_ui.delete_all_from_entry()
+        self.create_ui.delete_all_from_entry()
+        self.chat_ui.delete_all_from_entry()
+
         self.send_msg("logout")
 
     def start(self):
