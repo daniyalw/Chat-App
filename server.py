@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 import json
+import time
 
 class Auth:
     def __init__(self, path):
@@ -67,6 +68,9 @@ class Server:
         self.rooms[name] = pswd
         self.clients[sock]['room'] = name
         sock.send(f"room:success:create".encode("utf-8"))
+        time.sleep(0.5)
+        sock.send(f"users:{self.clients[sock]['username']}".encode("utf-8"))
+        time.sleep(0.5)
         sock.send(f"msg:SERVER:{self.clients[sock]['username']} connected".encode("utf-8"))
 
     def users_in_room(self, name):
@@ -77,6 +81,21 @@ class Server:
                 count += 1
 
         return count
+
+    def get_users_in_room(self, name):
+        users = []
+
+        for sock in self.clients:
+            if self.clients[sock]['room'] == name:
+                users.append(self.clients[sock]['username'])
+
+        for i in users:
+            print(f"User: {i}")
+
+        return users
+
+    def room_exists(self, name):
+        return name in self.rooms
 
     def add_user_to_room(self, sock, room, pswd):
         if self.clients[sock]['username'] == None or self.clients[sock]['room'] != None:
@@ -106,6 +125,16 @@ class Server:
         for sock in self.clients:
             if self.clients[sock]['username'] != None and self.clients[sock]['room'] == room:
                 sock.send(msg)
+
+    def send_users_room(self, room):
+        users = self.get_users_in_room(room)
+        msg = f"users"
+
+        for u in users:
+            msg += f":{u}"
+
+        msg = msg.encode("utf-8")
+        self.broadcast_msg(msg, room)
 
     def handle_client(self, client):
         while True:
@@ -175,6 +204,9 @@ class Server:
                 # will delete room if no users left
                 if room != None:
                     self.del_room(room)
+
+                    if self.room_exists(room):
+                        self.send_users_room(room)
             elif msg.startswith("logout"):
                 room = None
 
@@ -191,6 +223,9 @@ class Server:
                 # will delete room if no users left
                 if room != None:
                     self.del_room(room)
+
+                    if self.room_exists(room):
+                        self.send_users_room(room)
             elif msg.startswith("room:"):
                 action = msg.split(":")[1]
                 name = msg.split(":")[2]
@@ -205,6 +240,10 @@ class Server:
                         client.send(f"room:{ret}:join".encode("utf-8"))
                     else:
                         client.send(f"room:success:join".encode("utf-8"))
+
+                        self.send_users_room(name)
+                        time.sleep(0.5)
+
                         self.broadcast_msg(f"msg:SERVER:{self.clients[client]['username']} connected".encode("utf-8"), name)
 
 

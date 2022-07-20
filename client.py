@@ -183,6 +183,11 @@ class ChatUI(Frame):
         self.send_b = Button(self, text="Send", command=self.send)
         self.send_b.grid(row=4, column=2, sticky='nsew', padx=20, pady=20)
 
+        self.others = StringVar()
+        self.others.set(value=[])
+        self.listbox = Listbox(self, listvariable=self.others)
+        self.listbox.grid(row=1, rowspan=3, column=6, sticky='nsew', padx=10, pady=10)
+
     def display_new_msg(self, msg, _from):
         self.text.config(state='normal')
 
@@ -215,6 +220,8 @@ class ChatUI(Frame):
 
         self.content_entry.delete('1.0', END)
 
+        self.others.set(value=[])
+
 class LoadingUI(Frame):
     def __init__(self, root):
         self.root = root
@@ -229,6 +236,7 @@ class Client:
         self.remote_port = 33000
         self.remote_addr = (self.remote_ip, self.remote_port)
         self.name = ""
+        self.others = []
 
         self.client_socket = socket(AF_INET, SOCK_STREAM)
 
@@ -352,6 +360,20 @@ class Client:
                     else:
                         self.join_ui.jerr.config(text=succ)
                         self.switch(self.loading_ui, self.join_ui)
+            elif msg.startswith("users"):
+                self.others = []
+
+                count = 0
+
+                for i in msg.split(":"):
+                    if count == 0:
+                        count += 1
+                        continue
+
+                    self.others.append(i)
+
+                self.chat_ui.others.set(value=self.others)
+
 
     def on_closing(self):
         self.send_msg("end")
@@ -360,6 +382,7 @@ class Client:
 
     def logout(self):
         self.name = ""
+        self.others = []
         self.chat_ui.change_my_name("")
         self.switch(self.chat_ui, self.first_ui)
 
