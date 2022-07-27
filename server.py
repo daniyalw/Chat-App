@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 import json
 import time
+from datetime import datetime
 
 class Auth:
     def __init__(self, path):
@@ -71,7 +72,8 @@ class Server:
         time.sleep(0.5)
         sock.send(f"users:{self.clients[sock]['username']}".encode("utf-8"))
         time.sleep(0.5)
-        sock.send(f"msg:SERVER:{self.clients[sock]['username']} connected".encode("utf-8"))
+        tm = datetime.now().strftime("%H:%M")
+        sock.send(f"msg:{tm}:SERVER:{self.clients[sock]['username']} connected".encode("utf-8"))
 
     def users_in_room(self, name):
         count = 0
@@ -184,8 +186,12 @@ class Server:
                     del self.clients[client]
                     return
 
-                text = msg.split(":")[1]
-                fmt = f"msg:{self.clients[client]['username']}:{text}"
+                text = msg.split(":")[3]
+                # time of message sent
+                hr = msg.split(":")[1]
+                mn = msg.split(":")[2]
+
+                fmt = f"msg:{hr}:{mn}:{self.clients[client]['username']}:{text}"
                 fmt = fmt.encode("utf-8")
 
                 self.broadcast_msg(fmt, self.clients[client]['room'])
@@ -193,7 +199,8 @@ class Server:
                 room = None
 
                 if self.clients[client]['username'] != None and self.clients[client]['room'] != None:
-                    fmt = f"msg:SERVER:{self.clients[client]['username']} left"
+                    tm = datetime.now().strftime("%H:%M")
+                    fmt = f"msg:{tm}:SERVER:{self.clients[client]['username']} left"
                     fmt = fmt.encode("utf-8")
 
                     room = self.clients[client]['room']
@@ -211,7 +218,8 @@ class Server:
                 room = None
 
                 if self.clients[client]['username'] != None and self.clients[client]['room'] != None:
-                    fmt = f"msg:SERVER:{self.clients[client]['username']} left"
+                    tm = datetime.now().strftime("%H:%M")
+                    fmt = f"msg:{tm}:SERVER:{self.clients[client]['username']} left"
                     fmt = fmt.encode("utf-8")
 
                     room = self.clients[client]['room']
@@ -244,7 +252,8 @@ class Server:
                         self.send_users_room(name)
                         time.sleep(0.5)
 
-                        self.broadcast_msg(f"msg:SERVER:{self.clients[client]['username']} connected".encode("utf-8"), name)
+                        tm = datetime.now().strftime("%H:%M")
+                        self.broadcast_msg(f"msg:{tm}:SERVER:{self.clients[client]['username']} connected".encode("utf-8"), name)
 
 
     def close(self):

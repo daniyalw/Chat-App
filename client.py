@@ -1,6 +1,6 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
-
+from datetime import datetime
 from tkinter import *
 from tkinter.scrolledtext import *
 from tkinter.commondialog import *
@@ -185,16 +185,30 @@ class ChatUI(Frame):
 
         self.others = StringVar()
         self.others.set(value=[])
-        self.listbox = Listbox(self, listvariable=self.others)
+        self.listbox = Listbox(self, listvariable=self.others, selectmode='single')
         self.listbox.grid(row=1, rowspan=3, column=6, sticky='nsew', padx=10, pady=10)
 
-    def display_new_msg(self, msg, _from):
+    def display_new_msg(self, msg, _from, hr, mn):
         self.text.config(state='normal')
 
+        pm = "AM"
+        hour = 0
+
+        try:
+            hour = int(hr)
+
+            if hour > 12:
+                hour -= 12
+                pm = "PM"
+            elif hour == 12:
+                pm = "PM"
+        except ValueError:
+            mn = 0
+
         if _from == self.name:
-            self.text.insert(END, f"Me: {msg}\n")
+            self.text.insert(END, f"Me ({hour}:{mn} {pm}): {msg}\n")
         else:
-            self.text.insert(END, f"{_from}: {msg}\n")
+            self.text.insert(END, f"{_from} ({hour}:{mn} {pm}): {msg}\n")
 
         self.text.config(state='disabled')
 
@@ -204,7 +218,9 @@ class ChatUI(Frame):
         if content.strip() == "":
             return
 
-        fmt = f"msg:{content}"
+        tm = datetime.now().strftime("%H:%M")
+
+        fmt = f"msg:{tm}:{content}"
 
         self.content_entry.delete('1.0', END)
 
@@ -343,10 +359,12 @@ class Client:
                     self.switch(self.loading_ui, self.signup_ui)
                     self.signup_ui.message_config("Username taken.");
             elif msg.startswith("msg:"):
-                _from = msg.split(":")[1]
-                _msg = msg.split(":")[2]
+                hr = msg.split(":")[1]
+                mn = msg.split(":")[2]
+                _from = msg.split(":")[3]
+                _msg = msg.split(":")[4]
 
-                self.chat_ui.display_new_msg(_msg, _from)
+                self.chat_ui.display_new_msg(_msg, _from, hr, mn)
             elif msg.startswith("room:"):
                 succ = msg.split(":")[1]
                 action = msg.split(":")[2]
