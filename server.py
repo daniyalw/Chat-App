@@ -8,6 +8,17 @@ class Auth:
     def __init__(self, path):
         self.path = path
 
+        # ensure file exists
+        try:
+            with open(self.path, "r") as file:
+                pass
+        except FileNotFoundError:
+            with open(self.path, "x") as file:
+                pass
+
+            with open(self.path, "a") as file:
+                file.write("{}")
+
     def login(self, username, password):
         with open(self.path, "r") as file:
             contents = json.load(file)
